@@ -91,15 +91,16 @@ number_shares_RA <- function(periods, n0, ones_plus_r){
   return[1] <- n0
   for (j in 2:periods){
     #each entry is the previous entry times a0
-    return[j] <- return[j-1]*one_plus_r[j]
+    return[j] <- return[j-1]*one_plus_r[j-1]
   }
   return(return)
 }
 
 number_shares <- number_shares_RA(periods, n0, one_plus_r)
 
-expected_payout_bond_ladder <- rep(b0,periods)
-
+expected_payout_bond_ladder <- rep(b0,periods-1)
+# append a 0 to expected payout bond ladder
+expected_payout_bond_ladder <- c(expected_payout_bond_ladder,0)
 expected_payout_REITS <- number_shares
 
 library(ggplot2)
@@ -115,8 +116,86 @@ ggplot(melted_data, aes(x = id, y = value, fill = variable)) +
   labs(title = "Stacked Bar Plot",
        x = "Category",
        y = "Value",
-       fill = "Variable")
+       fill = "Variable") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black")
 
+
+#Simulation initialization
+longevity_return_simulated <- function(periods, lifetable, number_individuals){
+  #initialize the return vector
+  return <- rep(0, periods)
+  for (j in 1:periods){
+    #return the fraction of deaths in the population
+    r <- rbinom(1, number_individuals, lifetable[lifetable$Age == 65+j, "qx"])/number_individuals
+    return[j] <- r/(1-r)
+  }
+  return(return)
+}
+
+N <- 1000 #number of simulations
+number_individuals <- 10000
+periods <- 30
+
+anual_rent_REITS_share <- 20
+price_REITS_share <- 200
+real_return_REITS <- 0.03
+cost_1dollar_perpetuity <- 1/real_return_REITS
+anual_expected_longevity_return <- prod(one_plus_r)^(1/30)-1
+n0 <- (1/(1+anual_expected_longevity_return))^(30)
+a0 <- cost_1dollar_perpetuity*n0
+b0 <- 1 - n0
+
+number_shares_RA_simulated <- function(periods, n0, number_individuals){
+  #initialize the return vector
+  return <- rep(0, periods)
+  return[1] <- n0
+  one_plus_r <- longevity_return_simulated(periods, lifetable_2021, number_individuals) + 1
+  
+  for (j in 2:periods){
+    #each entry is the previous entry times a0
+    return[j] <- return[j-1]*one_plus_r[j-1]
+  }
+  return(return)
+}
+
+for (i in 1:N){
+  number_shares <- number_shares_RA_simulated(periods, n0, number_individuals)
+  if (i == 1){
+    number_shares_matrix <- number_shares
+  } else {
+    number_shares_matrix <- cbind(number_shares_matrix, number_shares)
+  }
+}
+
+plot(c(0,30),c(0,1.5),type="n",
+     xlab="YEARS after age 65",
+     ylab="Return of REITS")
+title(main="Quantiles of REITS return of Bond Ladder",
+      sub="(Original Pool Size = 10,000 )")
+mtext(side=3, line=0.3,
+      "Range: 99th (Highest, Green) & 1st (Lowest, Red)percentile"
+      ,cex=1.1,font=3)
+grid(ny=18,lty=20)
+for (i in 1:30){
+  
+  pct99<-as.numeric(quantile(number_shares_matrix[i,],0.99))
+  pct01<-as.numeric(quantile(number_shares_matrix[i,],0.01))
+  points(i,pct99,col="green",pch=6)
+  points(i,pct01,col="red",pch=2)
+
+  
+}
+abline(h=1,lty=2)
+quantile(number_shares_matrix[30,],0.01)
+
+number_shares <- number_shares_RA(periods, n0, one_plus_r)
+number_shares
+expected_payout_bond_ladder <- rep(b0,periods-1)
+# append a 0 to expected payout bond ladder
+expected_payout_bond_ladder <- c(expected_payout_bond_ladder,0)
+expected_payout_REITS <- number_shares
+
+### Full REITS
 expected_payout_FULL_REITS <- number_shares_RA(periods,1,ones_plus_r)
 #do a bar plot of the expected payout of the full REITS
 data <- data.frame(expected_payout_FULL_REITS)
