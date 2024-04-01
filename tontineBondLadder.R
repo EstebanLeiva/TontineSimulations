@@ -235,17 +235,16 @@ ggplot(melted_data, aes(x = id, y = value, fill = variable)) +
 
 #### SIMULATIONS RETURNS ####
 #### THIS IS THE VERSION THAT WORKS ####
-lifetable_2021 <- read.csv("data/LifeTablesbyYear/_2021 .csv")
+lifetable_2021 <- read.csv("data/LifeTablesbyYear/2021.csv")
 
 set.seed(1234)
 
 longevity_return_simulated <- function(periods, lifetable, number_individuals){
   #initialize the return vector
   return <- rep(0, periods)
-  return[1] <- 1
-  for (j in 2:periods){
+  for (j in 1:periods){
     #return the fraction of deaths in the population
-    deaths <- rbinom(1, number_individuals, lifetable[lifetable$Age == 65+j, "qx"])
+    deaths <- rbinom(1, number_individuals, lifetable[lifetable$Age == 64+j, "qx"])
     r <- deaths/number_individuals
     number_individuals <- number_individuals - deaths
     return[j] <- r/(1-r)
@@ -262,7 +261,8 @@ longevity_return <- function(periods, lifetable){
   return <- rep(0, periods)
   
   for (j in 1:periods){
-    return[j] <- lifetable[lifetable$Age == 65+j, "qx"]
+    r <- lifetable[lifetable$Age == 64+j, "qx"]
+    return[j] <- r/(1-r)
   }
   
   return(return)
@@ -288,7 +288,7 @@ number_shares_RA <- function(periods, n0, one_plus_r){
   return <- rep(0, periods)
   return[1] <- n0*one_plus_r[1]
   for (j in 2:periods){
-    #each entry is the previous entry times a0
+    #each entry is the previous entry times 1+r
     return[j] <- return[j-1]*one_plus_r[j]
   }
   return(return)
@@ -298,23 +298,23 @@ REITS_payout <- function(periods, number_shares, std){
   #initialize the return vector
   return <- rep(0, periods)
   simulation <- simulate_returns(periods, 0, std)
-  print(simulation[1])
+  #print(simulation[1])
   for (j in 1:periods){
     return[j] <- number_shares[j]*simulation[j]
   }
   return(return)
 }
 
-
+REITS_returns_std <- 0.1
 for (i in 1:N){
   #TE PROBLEM IS longevity_return_simulated, IF YOU USE one_plus_r_init IT WORKS
   one_plus_r <- longevity_return_simulated(periods, lifetable_2021, number_individuals) + 1
   #one_plus_r <- one_plus_r_init
   number_shares <- number_shares_RA(periods, n0, one_plus_r)
   if (i == 1){
-    number_shares_matrix <- REITS_payout(periods, number_shares, 0)
+    number_shares_matrix <- REITS_payout(periods, number_shares, REITS_returns_std)
   } else {
-    number_shares_matrix <- cbind(number_shares_matrix, REITS_payout(periods, number_shares, 0))
+    number_shares_matrix <- cbind(number_shares_matrix, REITS_payout(periods, number_shares, REITS_returns_std))
   }
 }
 
