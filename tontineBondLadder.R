@@ -270,7 +270,7 @@ longevity_return <- function(periods, lifetable){
 
 
 N <- 1000 #number of simulations
-number_individuals <- 100000
+number_individuals <- 10000
 periods <- 30
 
 anual_rent_REITS_share <- 20
@@ -307,7 +307,6 @@ REITS_payout <- function(periods, number_shares, std){
 
 REITS_returns_std <- 0.1
 for (i in 1:N){
-  #TE PROBLEM IS longevity_return_simulated, IF YOU USE one_plus_r_init IT WORKS
   one_plus_r <- longevity_return_simulated(periods, lifetable_2021, number_individuals) + 1
   #one_plus_r <- one_plus_r_init
   number_shares <- number_shares_RA(periods, n0, one_plus_r)
@@ -338,4 +337,30 @@ for (i in 1:30){
 }
 abline(h=1,lty=2)
 
+#Tpx (L0) vs 1-REITS bond
+
+plot(c(0,30),c(-0.2,1.5),type="n",
+     xlab="YEARS after age 65",
+     ylab="Return of REITS")
+title(main="Quantiles of REITS return of Bond Ladder",
+      sub="(Original Pool Size = 10,000 )")
+mtext(side=3, line=0.3,
+      "Range: 99th (Highest, Green) & 1st (Lowest, Red)percentile"
+      ,cex=1.1,font=3)
+grid(ny=18,lty=20)
+for (i in 1:30){
+  
+  pct99<-as.numeric(quantile(1-number_shares_matrix[i,],1))
+  pct01<-as.numeric(quantile(1-number_shares_matrix[i,],0))
+  Tpx <- lifetable_2021[lifetable_2021$Age == 64+i, "Tpx"]
+  px <- lifetable_2021[lifetable_2021$Age == 64+i, "px"]
+  points(i,pct99,col="green",pch=6)
+  points(i,pct01,col="red",pch=2)
+  points(i,Tpx,col="blue",pch=4)
+  points(i,px,col="black",pch=3)
+  
+  
+}
+abline(h=0,lty=2)
+#by this graph it does not appear that L0 and the bond ladder are the same.
 
