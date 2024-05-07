@@ -353,14 +353,16 @@ for (i in 1:30){
   pct99<-as.numeric(quantile(1-number_shares_matrix[i,],1))
   pct01<-as.numeric(quantile(1-number_shares_matrix[i,],0))
   Tpx <- lifetable_2021[lifetable_2021$Age == 64+i, "Tpx"]
-  px <- lifetable_2021[lifetable_2021$Age == 64+i, "px"]
+  #px <- lifetable_2021[lifetable_2021$Age == 64+i, "px"]
   points(i,pct99,col="green",pch=6)
   points(i,pct01,col="red",pch=2)
   points(i,Tpx,col="blue",pch=4)
-  points(i,px,col="black",pch=3)
+  #points(i,px,col="black",pch=3)
   
   
 }
 abline(h=0,lty=2)
-#by this graph it does not appear that L0 and the bond ladder are the same.
-
+# by this graph it does not appear that L0 and the bond ladder are the same.
+# corregir al valor esperado (no cuantiles), asegurar que el bond ladder empiece en 0.76
+# coger diferentes tasas de descuento y comparar el valor presente del bond ladder vs el bono de retiro.
+# calcular valor presente del retirement bond con el bond ladder decreciente
