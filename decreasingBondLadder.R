@@ -36,23 +36,31 @@ number_shares_RA <- function(periods, n0, one_plus_r){
   return(return)
 }
 
+### Tpx Ladder ###
 Tpx <- c()
 for (i in 1:30){
-  value <- lifetable_2021[lifetable_2021$Age == 64+i, "Tpx"]
+  value <- lifetable_2021[lifetable_2021$Age == 65+i, "Tpx"]
   Tpx <- c(Tpx, value)
   
 }
-
+# update n0 in order to complete the tpx ladder
+n0 <- (1-Tpx[30])*((1)/(1+anual_expected_longevity_return))^(30)
 number_shares <- number_shares_RA(periods, n0, one_plus_r)
-#plot number_shares
-#y axis limits 
-plot(number_shares, type = "l", xlab = "Periods", ylab = "Number of shares", main = "Number of shares in REITS")
-#plot 1 - number_shares
-plot(1-number_shares, type = "l", xlab = "Periods", ylab = "Expected payout", main = "Decreasing bond ladder")
-# in the same figure plot tpx
-lines(Tpx, col = "red")
-# add legend
-legend("topright", legend = c("Bond", "Tpx"), col = c("black", "red"), lty = 1:2, cex = 0.8)
+
+#plot number of shares and tpx in the same graph
+plot(c(0,30),c(-0.5,1.5),type="n",
+     xlab="YEARS after age 65",
+     ylab="Return")
+title(main="Tontine Ladder payouts")
+mtext(side=3, line=0.3,cex=1.1,font=3)
+grid(ny=18,lty=20)
+for (i in 1:30){
+  points(i,number_shares[i],col="green",pch=1)
+  points(i,Tpx[i],col="red",pch=1)
+  points(i,number_shares[i]+Tpx[i],col="black",pch=1)
+}
+abline(h=1,lty=2)
+abline(h=0,lty=2)
 
 ##### Present Value #####
 
@@ -107,12 +115,13 @@ longevity_return <- function(periods, lifetable){
   
   return(return)
 }
-
+#rj es q/(1-q) para el individuo j de edad tal
 
 N <- 1000 #number of simulations
-number_individuals <- 10000
+number_individuals <- 1000
 periods <- 30
 
+#Use Q_T as in the paper
 anual_rent_REITS_share <- 20
 price_REITS_share <- 200
 real_return_REITS <- 0.03
@@ -173,12 +182,18 @@ for (i in 1:30){
   points(i,pct99,col="green",pch=6)
   points(i,pct01,col="red",pch=2)
   
+  pct99<-as.numeric(quantile(number_shares_matrix[i,],1))
+  pct01<-as.numeric(quantile(number_shares_matrix[i,],0))
+  points(i,pct99,col="gray",pch=6)
+  points(i,pct01,col="black",pch=2)
+  
   
 }
 abline(h=1,lty=2)
 abline(h=0,lty=2)
 
 # que el reits sea la diferencia con el Tpx
+#cambiar el n0 para que de 1-pagoTpxen30T
 one_plus_r <- longevity_return(periods, lifetable_2021) + 1
 
 Tpx <- c()
@@ -210,4 +225,11 @@ for (i in 1:periods){
 }
 abline(h=1,lty=2)
 abline(h=0,lty=2)
-# tpx igual a los pagos (no estoy en una tontina), con los mortality credits tengo un pago seguro de 1
+
+#Programar Tontine Bond Ladder con G Montecarlo
+
+
+#Programar Decreasing Bond Ladder con G Montecarlo
+
+
+#Arreglar n0 de Tpx + REITS ladder
