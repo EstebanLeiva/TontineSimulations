@@ -20,9 +20,10 @@ group_gain <- function(periods, lifetable, r, n){
   G <- rep(0, periods)
   
   for (j in 1:periods){
-    deaths <- rbinom(1, n, lifetable[lifetable$Age == 65+j, "qx"])
-    n <- n - deaths
+    deaths <- rbinom(1, n, lifetable[lifetable$Age == 65+j, "qx"]/(1-lifetable[lifetable$Age == 65+j, "qx"]))
+    # Expected value: deaths <- lifetable[lifetable$Age == 65+j, "qx"]/(1-lifetable[lifetable$Age == 65+j, "qx"])*n
     G[j] <- deaths/(r[j]*n)
+    n <- n - deaths
   }
   
   return(G)
@@ -56,7 +57,7 @@ REITS_return <- function(periods, n0, one_plus_rG){
   return[1] <- n0*one_plus_rG[1]
   for (j in 2:periods){
     #each entry is the previous entry times 1+r
-    return[j] <- return[j-1]*one_plus_rG[j]
+    return[j] <- return[j-1]*one_plus_rG[j]*real_return_REITS
   }
   return(return)
 }
@@ -94,7 +95,7 @@ bondLadderREITS <- function(N, periods, lifetable, number_individuals, n0){
 }
 
 
-N <- 100
+N <- 1000
 number_individuals <- 10000
 periods <- 30
 
@@ -109,11 +110,11 @@ matrixBond <- bondLadder(N, periods, lifetable_2021, number_individuals, n0)
 
 plot(c(0,30),c(0.5,1.5),type="n",
      xlab="YEARS after age 65",
-     ylab="Return of REITS")
-title(main="Quantiles of Bond Ladder payouts",
-      sub="(Original Pool Size = 10,000 )")
+     ylab="Payout")
+title(main="Quantiles of payouts",
+      sub="(Initial Pool Size = 10,000), (Simulations = 1,000)")
 mtext(side=3, line=0.3,
-      "Range: 99th (Highest, Green) & 1st (Lowest, Red)percentile"
+      "Range: 99th (Highest, Green) & 1st (Lowest, Red) percentile"
       ,cex=1.1,font=3)
 grid(ny=18,lty=20)
 for (i in 1:30){
@@ -124,7 +125,11 @@ for (i in 1:30){
 }
 abline(h=1-n0,lty=2)
 
-#multiplicar todos los tpx*proporcion inicial (1-n0)
+#Simulate with different ages
+#Two types of individuals, with different portfolios (one with bond ladder, one with s&p index)
+
+
+## WITH REITS
 
 matrixREITS <- bondLadderREITS(N, periods, lifetable_2021, number_individuals, n0)
 
